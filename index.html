@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sprite — Obey Your Thirst</title>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: #00a651;
+    --green-light: #4cd964;
+    --green-dark: #007a3d;
+    --yellow: #ffe600;
+    --bg: #050807;
+    --text: #ffffff;
+    --muted: rgba(255,255,255,0.55);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ NAV ============ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 48px;
+    z-index: 100;
+    transition: background 0.3s, backdrop-filter 0.3s;
+  }
+  nav.scrolled {
+    background: rgba(5,8,7,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .logo {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--green);
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,166,81,0.6);
+  }
+  .logo-mark::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    background: var(--yellow);
+    border-radius: 50%;
+  }
+  nav ul {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+    align-items: center;
+  }
+  nav a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.75;
+    transition: opacity 0.2s;
+  }
+  nav a:hover { opacity: 1; }
+  .nav-cta {
+    background: var(--green);
+    color: #fff !important;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    box-shadow: 0 8px 24px rgba(0,166,81,0.35);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,166,81,0.5);
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 120px 48px 60px;
+    gap: 0;                          /* remove gap so shift is predictable */
+    overflow: hidden;
+  }
+
+  /* Green glow — sits behind the can, moves with it */
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 32%;                      /* ← moved left with the can */
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle,
+      rgba(0,166,81,0.45) 0%,
+      rgba(0,166,81,0.15) 35%,
+      transparent 70%);
+    transform: translateY(-50%);
+    filter: blur(60px);
+    z-index: 0;
+    pointer-events: none;
+    animation: pulse 6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.8; transform: translateY(-50%) scale(1); }
+    50%      { opacity: 1;   transform: translateY(-50%) scale(1.1); }
+  }
+
+  /* ---------- HERO TEXT ---------- */
+  .hero-text {
+    position: relative;
+    z-index: 2;
+    max-width: 560px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--green-light);
+    margin-bottom: 28px;
+    background: rgba(0,166,81,0.08);
+  }
+  .badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: var(--green-light);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green-light);
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 6vw, 92px);
+    line-height: 0.95;
+    font-weight: 900;
+    letter-spacing: -3px;
+    margin-bottom: 28px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--green-light), var(--yellow));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+  }
+  .hero p {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-bottom: 40px;
+    max-width: 480px;
+  }
+  .buttons {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 16px 32px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0,166,81,0.4);
+  }
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 44px rgba(0,166,81,0.55);
+  }
+  .btn-primary svg { transition: transform 0.2s; }
+  .btn-primary:hover svg { transform: translateX(4px); }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-3px);
+  }
+
+  /* ---------- HERO CAN (CENTERED) ---------- */
+  .hero-can {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    transform: translateX(-22%);      /* ← shifted toward center */
+  }
+
+  /* Inner wrapper holds the float animation
+     so it doesn't fight the translateX above */
+  .hero-can-inner {
+    width: 100%;
+    height: 100%;
+    animation: float 7s ease-in-out infinite;
+  }
+
+  .hero-can video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 40px 80px rgba(0,0,0,0.6))
+            drop-shadow(0 0 40px rgba(0,166,81,0.25));
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-18px) rotate(1deg); }
+  }
+
+  /* ============ BUBBLES ============ */
+  .bubbles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%,
+      rgba(255,255,255,0.4),
+      rgba(0,166,81,0.1) 60%,
+      transparent 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: rise linear infinite;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(100vh) scale(0.5); opacity: 0; }
+    10%  { opacity: 0.7; }
+    90%  { opacity: 0.7; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  /* ============ SCROLL HINT ============ */
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 48px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 2;
+  }
+  .scroll-hint::after {
+    content: "";
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(to right, var(--muted), transparent);
+  }
+
+  /* ============ FEATURES ============ */
+  .features {
+    padding: 100px 48px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .feature {
+    padding: 40px 32px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: transform 0.3s, border-color 0.3s, background 0.3s;
+  }
+  .feature:hover {
+    transform: translateY(-6px);
+    border-color: rgba(0,166,81,0.3);
+    background: rgba(0,166,81,0.04);
+  }
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    font-size: 22px;
+  }
+  .feature h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .feature p {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    nav { padding: 16px 20px; }
+    nav ul { display: none; }
+
+    .hero {
+      grid-template-columns: 1fr;
+      padding: 100px 20px 40px;
+      text-align: center;
+      gap: 20px;
+      min-height: auto;
+    }
+    .hero-text { max-width: 100%; margin: 0 auto; }
+    .hero p { margin-left: auto; margin-right: auto; }
+    .buttons { justify-content: center; }
+
+    .hero-can {
+      max-width: 420px;
+      order: -1;
+      transform: none;              /* ← reset shift on mobile */
+      margin: 0 auto;
+    }
+
+    .hero::before {
+      right: 50%;
+      transform: translate(50%, -50%);   /* center glow on mobile */
+      width: 500px;
+      height: 500px;
+    }
+    .scroll-hint { left: 50%; transform: translateX(-50%); }
+
+    .features {
+      grid-template-columns: 1fr;
+      padding: 60px 20px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero h1 { letter-spacing: -2px; }
+    .btn { padding: 14px 24px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <nav id="nav">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      SPRITE
+    </div>
+    <ul>
+      <li><a href="#features">Product</a></li>
+      <li><a href="#">Flavors</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#" class="nav-cta">Buy Now</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="bubbles" id="bubbles"></div>
+
+    <!-- Left: Text -->
+    <div class="hero-text">
+      <span class="badge">Now Available</span>
+      <h1>Obey Your <em>Thirst.</em></h1>
+      <p>
+        Crisp, clean, lemon-lime refreshment. Zero sugar. Zero compromise.
+        The original cool drink that keeps it real.
+      </p>
+      <div class="buttons">
+        <a href="#" class="btn btn-primary">
+          Buy Now
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+        <a href="#features" class="btn btn-secondary">Learn More</a>
+      </div>
+    </div>
+
+    <!-- Right: Spinning Can (shifted toward center) -->
+    <div class="hero-can">
+      <div class="hero-can-inner">
+        <!-- ================================================
+             YOUR TRANSPARENT VIDEO
+             File: addon/sprite_can_360.webm
+             Fallback: addon/sprite_can_360.mp4
+        ================================================ -->
+        <video autoplay loop muted playsinline>
+          <source src="addon/spritecan.webm" type="video/webm" />
+        </video>
+      </div>
+    </div>
+
+    <div class="scroll-hint">Scroll</div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section class="features" id="features">
+    <div class="feature">
+      <div class="feature-icon">💧</div>
+      <h3>Lemon-Lime Crisp</h3>
+      <p>The original clean taste. Sharp, refreshing, and unmistakably Sprite.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <h3>Zero Sugar</h3>
+      <p>All the flavor, none of the sugar. Refreshment without the crash.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">❄️</div>
+      <h3>Best Ice Cold</h3>
+      <p>Serve chilled for maximum refreshment. Every sip hits different.</p>
+    </div>
+  </section>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script>
+    // Nav scroll effect
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // Generate bubbles
+    const bubbleContainer = document.getElementById('bubbles');
+    for (let i = 0; i < 14; i++) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const size = Math.random() * 60 + 20;
+      bubble.style.width = `${size}px`;
+      bubble.style.height = `${size}px`;
+      bubble.style.left = `${Math.random() * 100}%`;
+      bubble.style.bottom = `-${size}px`;
+      bubble.style.animationDuration = `${Math.random() * 12 + 10}s`;
+      bubble.style.animationDelay = `${Math.random() * 8}s`;
+      bubbleContainer.appendChild(bubble);
+    }
+
+    // Pause video when off-screen (saves battery on mobile)
+    const heroVideo = document.querySelector('.hero-can video');
+    if (heroVideo) {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) heroVideo.play().catch(() => {});
+        else heroVideo.pause();
+      }, { threshold: 0.25 });
+      observer.observe(heroVideo);
+    }
+  </script>
+
+</body>
+</html>
